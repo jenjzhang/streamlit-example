@@ -1,38 +1,58 @@
-from collections import namedtuple
-import altair as alt
-import math
+from langchain.llms import OpenAI
 import pandas as pd
 import streamlit as st
-
-"""
-# Welcome to Streamlit!
-
-Edit `/streamlit_app.py` to customize this app to your heart's desire!!! :heart:
-
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
-
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+import numpy as np
+import os
+import openai
 
 
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
+# openai.api_key = os.environ['OPENAI_API_KEY']
+openai.api_type = "azure"
+openai.api_base = "https://ifopenairesourcedev.openai.azure.com/"
+openai.api_version = "2023-03-15-preview"
+openai.api_key = "8edc50f1144c4fc380c90a493a17476e"
 
-    Point = namedtuple('Point', 'x y')
-    data = []
 
-    points_per_turn = total_points / num_turns
+# Create functions
+def generate_poem(topic, mood):
+    '''Generate poem.'''
+    prompt = f"Generate a poem about {topic} in a {mood} mood in less than 120 characters."
 
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
+    completion = openai.ChatCompletion.create(
+    engine="gpt-4",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": prompt}
+    ]
+    )
+    st.info(completion.choices[0].message.content, icon="🤖")
+        
+# Configure Streamlit page and state
+st.set_page_config(page_title="Poem", page_icon="✍️")
 
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+# Render Streamlit page
+# streamlit_analytics.start_tracking()
+st.title("JENerate Poems")
+st.markdown(
+    "This mini-app generates poems using the power of LLMs."
+)
+
+
+with st.form('my_form'):
+    topic = st.text_input(label="Enter a topic, lyric, phrase to generate a poem upon:", placeholder="AI")
+    mood = st.text_input(label="Enter a mood. Must be an adjective:", placeholder="inspirational")
+
+    submitted = st.form_submit_button('Generate poem')
+
+    if submitted:
+        generate_poem(topic, mood)
+
+
+
+# st.button(
+#         label="Generate text",
+#         type="primary",
+#         on_click=generate_poem,
+#         args=(topic,),
+#     )
+
